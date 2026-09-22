@@ -1,0 +1,1 @@
+# Dee 3D Field\n\nBrowser-playable 3D exploration game with movement, vehicles, and capture zones.\n\nControls: WASD, Shift, Ctrl, Space, E.\n
