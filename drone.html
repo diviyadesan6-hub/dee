@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DEE FPV — Drone Racing</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111b;font-family:Arial, sans-serif;color:#fff}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 8px #000}#top{display:flex;justify-content:space-between;padding:14px;gap:8px;align-items:flex-start}.panel{background:#071522b8;border:1px solid #8bd8ff55;border-radius:12px;padding:10px 13px;backdrop-filter:blur(8px)}.brand{font-weight:900;letter-spacing:2px;color:#8de1ff}.small{font-size:11px;color:#b7cbd8;margin-top:4px}.stat{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}#center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center}#cross{font-size:28px;color:#dff8ff;opacity:.8}#message{font-size:13px;letter-spacing:2px;color:#b9f1ff;margin-top:8px}#bottom{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;white-space:nowrap}.btn{pointer-events:auto;border:1px solid #8bd8ff88;background:#09243bd9;color:white;border-radius:12px;padding:11px 15px;font-weight:700}.btn:active,.btn.active{background:#167ba6}#help{position:absolute;left:14px;bottom:14px;max-width:240px;font-size:11px;line-height:1.5;color:#c4d6e1;background:#071522b8;padding:10px;border-radius:10px}#touch{display:none;position:fixed;inset:0;pointer-events:none}.pad{position:absolute;bottom:78px;width:116px;height:116px;border:1px solid #b7eaff88;border-radius:50%;background:#09243b66;pointer-events:auto;touch-action:none}.pad:after{content:'';position:absolute;width:38px;height:38px;border-radius:50%;background:#a5e9ff99;left:39px;top:39px}.left{left:18px}.right{right:18px}.touchlabel{position:absolute;bottom:-24px;width:100%;text-align:center;font-size:10px;color:#d9f5ff;letter-spacing:1px}#touch .up{right:24px;bottom:220px}#touch .down{right:24px;bottom:52px}#touch .up,#touch .down{width:54px;height:54px;border-radius:50%;background:#09243bd9;border:1px solid #b7eaff88;color:#fff;pointer-events:auto;touch-action:none;font-size:20px}#touch .up:after,#touch .down:after{display:none}@media(max-width:700px){#touch{display:block}#help{display:none}#bottom{bottom:8px}.panel{padding:8px 10px}.stat{font-size:16px}.small{font-size:9px}.btn{padding:9px 11px;font-size:11px}#top{padding:8px}}
+</style>
+</head>
+<body>
+<div id="hud">
+ <div id="top">
+  <div class="panel"><div class="brand">DEE FPV</div><div class="small">DRONE RACING SIMULATOR</div></div>
+  <div class="panel"><div class="small">LAP TIME</div><div class="stat" id="timer">00:00.0</div></div>
+  <div class="panel"><div class="small">GATES</div><div class="stat" id="gates">0 / 8</div></div>
+  <div class="panel"><div class="small">SPEED</div><div class="stat"><span id="speed">0</span> <small>km/h</small></div></div>
+ </div>
+ <div id="center"><div id="cross">＋</div><div id="message">FLY THROUGH THE GLOWING GATES</div></div>
+ <div id="help">W / S — throttle · A / D — steer<br>↑ / ↓ — climb / descend · Q / E — yaw<br>Space — brake · R — restart race<br>Mouse drag — look around</div>
+ <div id="bottom"><button class="btn" id="start">START RACE</button><button class="btn" id="reset">RESET</button><button class="btn" id="view">CAMERA: FPV</button></div>
+</div>
+<div id="touch">
+ <div class="pad left" id="steer"><div class="touchlabel">STEER</div></div>
+ <div class="pad right" id="look"><div class="touchlabel">LOOK</div></div>
+ <button class="up" id="throttle">▲</button><button class="down" id="brake">▼</button>
+</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x87b9d2);scene.fog=new THREE.Fog(0x87b9d2,90,330);
+const camera=new THREE.PerspectiveCamera(78,innerWidth/innerHeight,.1,700);
+const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xcceeff,0x354b38,2));const sun=new THREE.DirectionalLight(0xfff0d0,2.2);sun.position.set(40,80,25);scene.add(sun);
+const mat=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x426b43));ground.rotation.x=-Math.PI/2;ground.position.y=-2;scene.add(ground);
+const grid=new THREE.GridHelper(500,70,0x83b9a1,0x668c76);grid.position.y=-1.96;scene.add(grid);
+for(let i=0;i<55;i++){let x=(Math.random()-.5)*280,z=(Math.random()-.5)*280;if(Math.abs(x)<25&&Math.abs(z)<55)continue;let h=4+Math.random()*15;let tree=new THREE.Group();let trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,h*.35,6),mat(0x60472e));trunk.position.y=h*.175;tree.add(trunk);let crown=new THREE.Mesh(new THREE.ConeGeometry(2+Math.random()*2,h*.7,7),mat(i%3?0x1e6849:0x367c50));crown.position.y=h*.68;tree.add(crown);tree.position.set(x,-2,z);scene.add(tree)}
+// Course markers and gates
+const gatePositions=[new THREE.Vector3(0,5,-24),new THREE.Vector3(18,8,-52),new THREE.Vector3(42,5,-78),new THREE.Vector3(28,11,-108),new THREE.Vector3(-5,7,-130),new THREE.Vector3(-35,5,-105),new THREE.Vector3(-42,9,-65),new THREE.Vector3(-20,6,-35)];
+const gates=[];gatePositions.forEach((p,i)=>{const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(5,.32,10,36),new THREE.MeshStandardMaterial({color:0x35dfff,emissive:0x087ca8,emissiveIntensity:2}));g.add(ring);const postmat=mat(0xeafaff,.35,.3);for(const x of [-5,5]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,2,8),postmat);post.position.set(x,-5,0);g.add(post)}g.position.copy(p);g.lookAt(i<gatePositions.length-1?gatePositions[i+1]:gatePositions[0]);scene.add(g);gates.push(g)});
+const drone=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(1.4,.38,1.8),mat(0x202b36,.3,.6));drone.add(body);const canopy=new THREE.Mesh(new THREE.BoxGeometry(.9,.28,.75),mat(0x18bfe8,.25,.5));canopy.position.set(0,.28,-.15);drone.add(canopy);
+for(const x of [-1.25,1.25])for(const z of [-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(1.7,.12,.16),mat(0x303a44));arm.position.set(x*.42,0,z*.45);drone.add(arm);const motor=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.22,12),mat(0x111820,.3,.7));motor.position.set(x,0,z);drone.add(motor);const prop=new THREE.Mesh(new THREE.BoxGeometry(1.25,.035,.12),mat(0x9adff0,.3,.4));prop.position.set(x,.15,z);prop.userData.spin=true;drone.add(prop)}
+scene.add(drone);
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>keys[e.code]=false);
+let yaw=0,pitch=0,roll=0,vel=new THREE.Vector3(),started=false,finished=false,gateIndex=0,elapsed=0,last=performance.now(),cameraMode=0,drag=null;
+renderer.domElement.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,id:e.pointerId};renderer.domElement.setPointerCapture(e.pointerId)});renderer.domElement.addEventListener('pointermove',e=>{if(drag){yaw-= (e.clientX-drag.x)*.003;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-drag.y)*.003,-.8,.8);drag.x=e.clientX;drag.y=e.clientY}});renderer.domElement.addEventListener('pointerup',()=>drag=null);
+function bindPad(id,fn){const el=document.getElementById(id);let active=false;el.addEventListener('pointerdown',e=>{active=true;el.setPointerCapture(e.pointerId);fn(e, true)});el.addEventListener('pointermove',e=>{if(active)fn(e,true)});el.addEventListener('pointerup',e=>{active=false;fn(e,false)});el.addEventListener('pointercancel',()=>{active=false;fn(null,false)})}
+let touchSteer=0,touchLookX=0,touchLookY=0,touchThrottle=false,touchBrake=false;
+bindPad('steer',(e,on)=>{if(!on){touchSteer=0;return}const r=document.getElementById('steer').getBoundingClientRect();touchSteer=THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1)});
+bindPad('look',(e,on)=>{if(!on){touchLookX=touchLookY=0;return}const r=document.getElementById('look').getBoundingClientRect();touchLookX=THREE.MathUtils.clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1);touchLookY=THREE.MathUtils.clamp(((e.clientY-r.top)/r.height-.5)*2,-1,1)});
+for(const [id,key] of [['throttle','touchThrottle'],['brake','touchBrake']]){const el=document.getElementById(id);el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);if(key==='touchThrottle')touchThrottle=true;else touchBrake=true});const off=()=>{if(key==='touchThrottle')touchThrottle=false;else touchBrake=false};el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off)}
+function reset(){drone.position.set(0,5,0);yaw=0;pitch=0;roll=0;vel.set(0,0,0);gateIndex=0;elapsed=0;started=false;finished=false;document.getElementById('message').textContent='FLY THROUGH THE GLOWING GATES';document.getElementById('start').textContent='START RACE';updateHud()}
+function updateHud(){document.getElementById('gates').textContent=gateIndex+' / 8';document.getElementById('speed').textContent=Math.round(vel.length()*12);document.getElementById('timer').textContent=new Date(elapsed*1000).toISOString().slice(14,19)+'.'+Math.floor(elapsed*10)%10}
+document.getElementById('start').onclick=()=>{if(finished)reset();started=true;document.getElementById('start').textContent='RACING…';document.getElementById('message').textContent='GO!'};document.getElementById('reset').onclick=reset;document.getElementById('view').onclick=()=>{cameraMode=1-cameraMode;document.getElementById('view').textContent='CAMERA: '+(cameraMode?'CHASE':'FPV')};
+function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.035);last=now;
+const steer=(keys.KeyA?-1:0)+(keys.KeyD?1:0)+touchSteer;const throttle=keys.KeyW||keys.ArrowUp||touchThrottle;const brake=keys.KeyS||keys.ArrowDown||touchBrake||keys.Space;
+yaw-=steer*dt*(1.7+vel.length()*.13);yaw-=touchLookX*dt*.8;pitch=THREE.MathUtils.clamp(pitch+(keys.ArrowUp?0:0)+(keys.KeyR?0:0)-touchLookY*dt*.7,-.8,.8);pitch=THREE.MathUtils.clamp(pitch+((keys.KeyE?1:0)-(keys.KeyQ?1:0))*dt*.9,-.8,.8);
+const forward=new THREE.Vector3(-Math.sin(yaw),Math.sin(pitch),-Math.cos(yaw));
+if(throttle)vel.addScaledVector(forward,dt*19);if(brake)vel.multiplyScalar(Math.pow(.08,dt));else vel.multiplyScalar(Math.pow(.985,dt));if(vel.length()>31)vel.setLength(31);
+drone.position.addScaledVector(vel,dt);if(drone.position.y<0){drone.position.y=0;vel.y=Math.max(0,vel.y)}if(drone.position.y>65){drone.position.y=65;vel.y=Math.min(0,vel.y)}
+drone.rotation.set(-pitch, yaw, -steer*.22);
+drone.children.forEach(o=>{if(o.userData.spin)o.rotation.y+=dt*35});
+if(started&&!finished){elapsed+=dt;const target=gatePositions[gateIndex];if(drone.position.distanceTo(target)<6){gates[gateIndex].children[0].material.color.set(0x63ff9c);gates[gateIndex].children[0].material.emissive.set(0x159a48);gateIndex++;if(gateIndex===8){finished=true;started=false;document.getElementById('message').textContent='COURSE COMPLETE!';document.getElementById('start').textContent='RACE AGAIN'}else document.getElementById('message').textContent='GATE '+gateIndex+' CLEARED'}} 
+if(cameraMode===0){camera.position.copy(drone.position).add(new THREE.Vector3(0,.35,0));camera.rotation.set(pitch,yaw,0)}else{const offset=new THREE.Vector3(0,4,10).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);camera.position.copy(drone.position).add(offset);camera.lookAt(drone.position)}
+gates.forEach((g,i)=>{if(i>=gateIndex)g.children[0].material.emissiveIntensity=1.5+Math.sin(now*.004+i)*.6});updateHud();renderer.render(scene,camera)}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});reset();requestAnimationFrame(animate);
+</script>
+</body></html>
