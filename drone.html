@@ -18,7 +18,7 @@
  </div>
  <div id="center"><div id="cross">＋</div><div id="message">FLY THROUGH THE GLOWING GATES</div></div>
  <div id="help">W / S — throttle · A / D — steer<br>↑ / ↓ — climb / descend · Q / E — yaw<br>Space — brake · R — restart race<br>Mouse drag — look around</div>
- <div id="bottom"><button class="btn" id="start">START RACE</button><button class="btn" id="reset">RESET</button><button class="btn" id="view">CAMERA: FPV</button></div>
+ <div id="bottom"><button class="btn" id="start">START RACE</button><button class="btn" id="reset">RESET</button><button class="btn" id="view">CAMERA: FPV</button><a class="btn" href="https://raw.githubusercontent.com/diviyadesan6-hub/dee/main/drone.html" download style="text-decoration:none;pointer-events:auto">DOWNLOAD</a></div>
 </div>
 <div id="touch">
  <div class="pad left" id="steer"><div class="touchlabel">STEER</div></div>
@@ -35,7 +35,26 @@ const mat=(c,r=.8,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,meta
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mat(0x426b43));ground.rotation.x=-Math.PI/2;ground.position.y=-2;scene.add(ground);
 const grid=new THREE.GridHelper(500,70,0x83b9a1,0x668c76);grid.position.y=-1.96;scene.add(grid);
 for(let i=0;i<55;i++){let x=(Math.random()-.5)*280,z=(Math.random()-.5)*280;if(Math.abs(x)<25&&Math.abs(z)<55)continue;let h=4+Math.random()*15;let tree=new THREE.Group();let trunk=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,h*.35,6),mat(0x60472e));trunk.position.y=h*.175;tree.add(trunk);let crown=new THREE.Mesh(new THREE.ConeGeometry(2+Math.random()*2,h*.7,7),mat(i%3?0x1e6849:0x367c50));crown.position.y=h*.68;tree.add(crown);tree.position.set(x,-2,z);scene.add(tree)}
-// Course markers and gates
+
+// Enhanced procedural scenery: sculpted hills, distant peaks, lake, track beacons and clouds
+scene.background=new THREE.Color(0x78b9d8);
+scene.fog=new THREE.FogExp2(0x9bc8d8,.0028);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
+const sky=new THREE.Mesh(new THREE.SphereGeometry(520,24,16),new THREE.MeshBasicMaterial({color:0x80bce0,side:THREE.BackSide}));scene.add(sky);
+const terrainGeo=new THREE.PlaneGeometry(520,520,100,100);const pos=terrainGeo.attributes.position;
+for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getY(i);const hill=Math.sin(x*.025)*Math.cos(z*.021)*3.5+Math.sin((x+z)*.012)*4;pos.setZ(i,hill)}
+terrainGeo.computeVertexNormals();const terrain=new THREE.Mesh(terrainGeo,new THREE.MeshStandardMaterial({color:0x557d4c,roughness:1}));terrain.rotation.x=-Math.PI/2;terrain.position.y=-2.1;scene.add(terrain);
+const mountainMat=[mat(0x526a79),mat(0x718b99),mat(0x3c5965)];
+for(let i=0;i<24;i++){const a=i/24*Math.PI*2,r=185+Math.random()*55,h=30+Math.random()*65,rad=18+Math.random()*25;const m=new THREE.Mesh(new THREE.ConeGeometry(rad,h,7),mountainMat[i%3]);m.position.set(Math.cos(a)*r,h/2-2,Math.sin(a)*r-45);m.rotation.y=Math.random()*2;scene.add(m)}
+const lake=new THREE.Mesh(new THREE.CircleGeometry(52,64),new THREE.MeshStandardMaterial({color:0x267f9a,metalness:.35,roughness:.2}));lake.rotation.x=-Math.PI/2;lake.position.set(100,-1.75,-120);scene.add(lake);
+const trackMat=new THREE.MeshStandardMaterial({color:0x152b35,roughness:.95});
+const runway=new THREE.Mesh(new THREE.PlaneGeometry(20,220),trackMat);runway.rotation.x=-Math.PI/2;runway.position.set(0,-1.65,-85);scene.add(runway);
+for(let z=-185;z<20;z+=8){for(const x of [-9,9]){const beacon=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.8,8),new THREE.MeshStandardMaterial({color:0x33dfff,emissive:0x087baf,emissiveIntensity:2}));beacon.position.set(x,-.8,z);scene.add(beacon)}}
+const cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.8});
+for(let i=0;i<28;i++){const c=new THREE.Group();for(let j=0;j<5;j++){const puff=new THREE.Mesh(new THREE.SphereGeometry(3+Math.random()*3,9,7),cloudMat);puff.position.set(j*3,Math.random()*2,Math.random()*3);c.add(puff)}c.position.set((Math.random()-.5)*360,55+Math.random()*55,-180+Math.random()*350);scene.add(c)}
+// Decorative paddock buildings along the course edge
+for(let i=0;i<12;i++){const w=7+Math.random()*8,h=5+Math.random()*14,d=8+Math.random()*12;const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(i%2?0x526c7c:0x354b5b,.75,.15));b.position.set(65+Math.random()*32,h/2-2,-180+i*15);scene.add(b);const roof=new THREE.Mesh(new THREE.BoxGeometry(w+1,.5,d+1),mat(0x1c303c));roof.position.set(b.position.x,h-1.7,b.position.z);scene.add(roof)}
+\n// Course markers and gates
 const gatePositions=[new THREE.Vector3(0,5,-24),new THREE.Vector3(18,8,-52),new THREE.Vector3(42,5,-78),new THREE.Vector3(28,11,-108),new THREE.Vector3(-5,7,-130),new THREE.Vector3(-35,5,-105),new THREE.Vector3(-42,9,-65),new THREE.Vector3(-20,6,-35)];
 const gates=[];gatePositions.forEach((p,i)=>{const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(5,.32,10,36),new THREE.MeshStandardMaterial({color:0x35dfff,emissive:0x087ca8,emissiveIntensity:2}));g.add(ring);const postmat=mat(0xeafaff,.35,.3);for(const x of [-5,5]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,2,8),postmat);post.position.set(x,-5,0);g.add(post)}g.position.copy(p);g.lookAt(i<gatePositions.length-1?gatePositions[i+1]:gatePositions[0]);scene.add(g);gates.push(g)});
 const drone=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(1.4,.38,1.8),mat(0x202b36,.3,.6));drone.add(body);const canopy=new THREE.Mesh(new THREE.BoxGeometry(.9,.28,.75),mat(0x18bfe8,.25,.5));canopy.position.set(0,.28,-.15);drone.add(canopy);
